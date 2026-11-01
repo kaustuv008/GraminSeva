@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GraminSeva / KisanMitra - ग्रामीण सेवा एवं किसान मित्र</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Application Script -->
+  <script src="script.js"></script>
+</head>
+<body class="bg-amber-50/40 text-stone-900 min-h-screen flex flex-col antialiased selection:bg-emerald-200">
+
+  <!-- Top Sticky Announcement & Sunlight Mode Switch -->
+  <header class="sticky top-0 z-40 bg-farmer-800 text-white shadow-md border-b-4 border-amber-500">
+    <div class="max-w-6xl mx-auto px-4 py-2.5 flex items-center justify-between">
+      
+      <!-- Brand & Offline Badge -->
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-amber-400 text-farmer-900 flex items-center justify-center font-black text-xl shadow">
+          🌾
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <h1 class="text-xl sm:text-2xl font-black tracking-tight flex items-center gap-1.5" id="brand-title">
+              GraminSeva
+            </h1>
+            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-600/40">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 mr-1.5 animate-pulse"></span>
+              <span id="badge-online">Live Mandi</span>
+            </span>
+          </div>
+          <p class="text-xs text-farmer-100 font-medium" id="brand-tagline">
+            किसान मित्र एवं ग्रामीण डिजिटल सेवा केंद्र
+          </p>
+        </div>
+      </div>
+
+      <!-- Controls: Language Selector & Audio Assistant -->
+      <div class="flex items-center space-x-2">
+        <!-- Language Switcher -->
+        <div class="relative">
+          <select id="lang-select" onchange="changeLanguage(this.value)" class="bg-farmer-900 text-white border-2 border-amber-400 rounded-lg px-2.5 py-1.5 text-xs sm:text-sm font-bold focus:ring-2 focus:ring-amber-300 cursor-pointer">
+            <option value="hi">हिन्दी (Hindi)</option>
+            <option value="en">English</option>
+            <option value="pa">ਪੰਜਾਬੀ (Punjabi)</option>
+            <option value="mr">मराठी (Marathi)</option>
+            <option value="te">తెలుగు (Telugu)</option>
+          </select>
+        </div>
+
+        <!-- Sunlight Field Mode Toggle -->
+        <button onclick="toggleSunlightMode()" title="Toggle High-Contrast Field Mode" class="p-2 bg-farmer-700 hover:bg-farmer-600 rounded-lg text-amber-300 border border-farmer-500 flex items-center text-xs font-semibold">
+          <i data-lucide="sun" class="w-4 h-4 mr-1"></i>
+          <span class="hidden md:inline" id="btn-sun-label">धूप मोड</span>
+        </button>
+
+        <!-- Voice Helper Trigger -->
+        <button id="master-mic-btn" onclick="startVoiceCommand()" class="bg-amber-400 hover:bg-amber-300 text-stone-900 font-bold px-3 py-1.5 rounded-lg flex items-center space-x-1.5 shadow transition-all transform active:scale-95">
+          <i data-lucide="mic" class="w-4 h-4 text-farmer-900"></i>
+          <span class="text-xs sm:text-sm hidden sm:inline" id="btn-mic-label">आवाज़ से पूछें</span>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Live Weather & Spray Advisory Bar -->
+    <div class="bg-farmer-900/90 text-farmer-100 text-xs px-4 py-1.5 border-t border-farmer-700/60 flex flex-wrap items-center justify-between gap-2">
+      <div class="flex items-center space-x-3">
+        <span class="flex items-center gap-1 font-semibold text-amber-300">
+          <i data-lucide="cloud-sun" class="w-3.5 h-3.5"></i>
+          <span>आज का मौसम (Weather): 28°C, 11 km/h हवा</span>
+        </span>
+        <span class="hidden sm:inline text-farmer-300">|</span>
+        <span class="hidden sm:inline text-emerald-300 font-medium flex items-center gap-1">
+          <i data-lucide="check-circle" class="w-3 h-3 text-emerald-400"></i>
+          <span>कीटनाशक छिड़काव के अनुकूल (Good Spray Conditions)</span>
+        </span>
+      </div>
+      <div class="flex items-center space-x-2 text-stone-300 font-mono text-[11px]">
+        <span>GPS: Meerut Region, UP</span>
+        <button onclick="speakText(document.getElementById('weather-summary').innerText)" class="hover:text-amber-300 text-white">
+          <i data-lucide="volume-2" class="w-3.5 h-3.5"></i>
+        </button>
+        <span id="weather-summary" class="hidden">आज तापमान अट्ठाईस डिग्री है। हवा शांत है, कीटनाशक छिड़काव के लिए अनुकूल समय है।</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Navigation Tabs -->
+  <nav class="bg-white border-b border-stone-200 sticky top-[72px] sm:top-[74px] z-30 shadow-sm">
+    <div class="max-w-6xl mx-auto px-2 sm:px-4">
+      <div class="flex space-x-1 sm:space-x-4 overflow-x-auto py-2 no-scrollbar">
+        <button onclick="switchTab('mandi')" id="tab-btn-mandi" class="tab-btn active px-3.5 py-2 rounded-xl font-bold text-sm flex items-center space-x-1.5 whitespace-nowrap bg-farmer-600 text-white shadow-sm transition">
+          <i data-lucide="trending-up" class="w-4 h-4"></i>
+          <span id="nav-mandi">मंडी भाव (Mandi Rates)</span>
+        </button>
+
+        <button onclick="switchTab('doctor')" id="tab-btn-doctor" class="tab-btn px-3.5 py-2 rounded-xl font-bold text-sm flex items-center space-x-1.5 whitespace-nowrap bg-stone-100 text-stone-700 hover:bg-stone-200 transition">
+          <i data-lucide="stethoscope" class="w-4 h-4 text-emerald-700"></i>
+          <span id="nav-doctor">AI फसल डॉक्टर (Crop Doctor)</span>
+        </button>
+
+        <button onclick="switchTab('equipment')" id="tab-btn-equipment" class="tab-btn px-3.5 py-2 rounded-xl font-bold text-sm flex items-center space-x-1.5 whitespace-nowrap bg-stone-100 text-stone-700 hover:bg-stone-200 transition">
+          <i data-lucide="tractor" class="w-4 h-4 text-amber-700"></i>
+          <span id="nav-equipment">किराया यंत्र (Machinery Rental)</span>
+        </button>
+
+        <button onclick="switchTab('emergency')" id="tab-btn-emergency" class="tab-btn px-3.5 py-2 rounded-xl font-bold text-sm flex items-center space-x-1.5 whitespace-nowrap bg-stone-100 text-stone-700 hover:bg-stone-200 transition">
+          <i data-lucide="phone-call" class="w-4 h-4 text-rose-600"></i>
+          <span id="nav-emergency">आपातकालीन व चिकित्सा (Emergency & Health)</span>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Notification Banner / Audio Speak Banner -->
+  <div id="voice-status-box" class="hidden bg-amber-100 border-b border-amber-300 px-4 py-2 text-stone-800 text-sm flex items-center justify-between">
+    <div class="flex items-center space-x-2">
+      <span class="w-3 h-3 rounded-full bg-red-600 animate-ping"></span>
+      <span class="font-bold text-farmer-800" id="voice-status-text">सुन रहे हैं... कृपया बोलें जैसे "गेहूं का भाव" या "आलू का रोग"</span>
+    </div>
+    <button onclick="stopVoiceCommand()" class="text-xs bg-stone-200 hover:bg-stone-300 px-2.5 py-1 rounded font-semibold text-stone-700">
+      रद्द करें (Cancel)
+    </button>
+  </div>
+
+  <!-- Primary Content Area -->
+  <main class="max-w-6xl mx-auto px-3 sm:px-4 py-5 flex-grow w-full">
+
+    <!-- ==================== TAB 1: MANDI RATES ==================== -->
+    <section id="tab-content-mandi" class="space-y-6">
+      
+      <!-- Mandi Banner & Search / Filter Controls -->
+      <div class="bg-gradient-to-r from-emerald-800 to-farmer-700 rounded-2xl p-4 sm:p-6 text-white shadow-lg relative overflow-hidden">
+        <div class="relative z-10">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <span class="bg-amber-400 text-farmer-950 font-black text-xs px-2.5 py-1 rounded-full uppercase tracking-wider">
+                e-NAM / Agmarknet Live Sync
+              </span>
+              <h2 class="text-xl sm:text-2xl font-black mt-2" id="mandi-head-title">
+                कृषि उपज मंडी भाव व शुद्ध मुनाफा गणक
+              </h2>
+              <p class="text-farmer-100 text-xs sm:text-sm max-w-xl" id="mandi-head-sub">
+                विभिन्न मंडियों की तुलना करें और वाहन भाड़ा काटकर अपना वास्तविक मुनाफा जानें।
+              </p>
+            </div>
+            <button onclick="speakMandiSummary()" class="self-start sm:self-center bg-white/20 hover:bg-white/30 backdrop-blur border border-white/40 text-white font-bold px-3 py-2 rounded-xl flex items-center gap-2 text-xs sm:text-sm">
+              <i data-lucide="volume-2" class="w-4 h-4 text-amber-300"></i>
+              <span id="btn-read-mandi">भाव बोलकर सुनाएं</span>
+            </button>
+          </div>
+
+          <!-- Quick Filters: Commodity Picker -->
+          <div class="mt-4 pt-4 border-t border-white/20">
+            <label class="block text-xs font-semibold text-farmer-200 mb-1.5" id="label-choose-crop">
+              फसल चुनें (Choose Crop):
+            </label>
+            <div class="flex flex-wrap gap-2" id="crop-filter-chips">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Net Profit & Transport Calculator Tool -->
+      <div class="bg-white rounded-2xl border-2 border-stone-200 p-4 sm:p-5 shadow-sm">
+        <div class="flex items-center justify-between border-b pb-3 mb-3">
+          <div class="flex items-center space-x-2">
+            <span class="p-2 bg-amber-100 text-amber-800 rounded-xl">
+              <i data-lucide="calculator" class="w-5 h-5"></i>
+            </span>
+            <div>
+              <h3 class="font-extrabold text-stone-900 text-base" id="calc-title">
+                मंडी भाड़ा व शुद्ध मुनाफा कैलकुलेटर (Net Return Estimator)
+              </h3>
+              <p class="text-xs text-stone-500" id="calc-sub">
+                खेत से मंडी तक की दूरी व पिकअप वाहन खर्च घटाकर प्रति क्विंटल कमाई निकालें
+              </p>
+            </div>
+          </div>
+          <span class="text-xs bg-emerald-100 text-emerald-800 font-bold px-2 py-1 rounded">
+            स्मार्ट किसान टूल
+          </span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-stone-600 mb-1" id="lbl-calc-crop">फसल व अनुमानित भाव</label>
+            <div class="text-sm font-black text-farmer-800 p-2 bg-stone-50 rounded-lg border border-stone-200" id="calc-display-rate">
+              गेहूं (Wheat) : ₹2,420 / क्विंटल
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-stone-600 mb-1" id="lbl-calc-qty">उपज मात्रा (क्विंटल में)</label>
+            <input type="number" id="calc-qty" value="30" min="1" oninput="calculateNetReturn()" class="w-full text-sm font-semibold p-2 border-2 border-stone-300 rounded-lg focus:border-farmer-600 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-stone-600 mb-1" id="lbl-calc-dist">मंडी दूरी (किलोमीटर)</label>
+            <input type="number" id="calc-dist" value="22" min="1" oninput="calculateNetReturn()" class="w-full text-sm font-semibold p-2 border-2 border-stone-300 rounded-lg focus:border-farmer-600 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-stone-600 mb-1" id="lbl-calc-freight">वाहन दर (₹ प्रति किमी)</label>
+            <input type="number" id="calc-freight" value="25" min="5" oninput="calculateNetReturn()" class="w-full text-sm font-semibold p-2 border-2 border-stone-300 rounded-lg focus:border-farmer-600 focus:outline-none">
+          </div>
+        </div>
+
+        <!-- Profit Summary Card -->
+        <div class="mt-4 p-3.5 bg-gradient-to-r from-emerald-50 to-green-50 rounded-xl border border-emerald-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div class="text-center sm:text-left">
+            <span class="text-xs text-stone-600 font-semibold block" id="lbl-total-sale">कुल बिक्री मूल्य (Gross Sale):</span>
+            <span class="text-lg font-black text-stone-800" id="res-gross">₹72,600</span>
+          </div>
+          <div class="text-center sm:text-left">
+            <span class="text-xs text-rose-600 font-semibold block" id="lbl-total-transport">अनुमानित परिवहन खर्च:</span>
+            <span class="text-lg font-black text-rose-700" id="res-transport">- ₹1,100</span>
+          </div>
+          <div class="text-center sm:text-left bg-emerald-600 text-white px-4 py-2 rounded-xl shadow-sm">
+            <span class="text-xs font-bold text-emerald-100 block" id="lbl-net-profit">शुद्ध जेब में बचत (Net in Hand):</span>
+            <span class="text-xl font-black" id="res-net">₹71,500</span>
+            <span class="text-[11px] block text-emerald-200" id="res-per-q">₹2,383 प्रति क्विंटल शुद्ध</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mandi Cards Grid -->
+      <div>
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-extrabold text-stone-800 text-base sm:text-lg flex items-center gap-2">
+            <i data-lucide="store" class="w-5 h-5 text-farmer-700"></i>
+            <span id="heading-mandi-cards" data-i18n="headingMandiCards">आस-पास की प्रमुख एपीएमसी मंडियां (Nearby APMC Mandis)</span>
+          </h3>
+          <span id="mandi-updated-time" data-i18n="mandiUpdatedTime" class="text-xs text-stone-500 font-medium">आज का अपडेट (Updated 2 hrs ago)</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="mandi-grid-container">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ==================== TAB 2: AI CROP DOCTOR ==================== -->
+    <section id="tab-content-doctor" class="hidden space-y-6">
+      
+      <!-- Doctor Banner -->
+      <div class="bg-gradient-to-r from-emerald-900 to-teal-800 rounded-2xl p-4 sm:p-6 text-white shadow-lg">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div>
+            <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-teal-950/70 text-teal-300 text-xs font-bold border border-teal-500/40 mb-2">
+              <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-400"></i>
+              <span>Gemma 2B Agri-Specialist AI / ICAR Knowledge Model</span>
+            </div>
+            <h2 class="text-xl sm:text-2xl font-black" id="doctor-head-title">
+              फसल रोग निदान एवं जैव-उपचार (Agri-Doctor)
+            </h2>
+            <p class="text-teal-100 text-xs sm:text-sm max-w-xl" id="doctor-head-sub">
+              खराब पत्ते की फोटो लगाएं या लक्षण चुनें। सटीक कीटनाशक खुराक, देसी नीम-दशपर्णी काढ़ा व छिड़काव मौसम सलाह तुरंत पाएं।
+            </p>
+          </div>
+          <button onclick="readDoctorSummary()" class="bg-teal-700/80 hover:bg-teal-600 text-white font-bold px-3 py-2 rounded-xl border border-teal-400/40 text-xs flex items-center gap-1.5">
+            <i data-lucide="volume-2" class="w-4 h-4 text-amber-300"></i>
+            <span id="btn-read-doc">सलाह सुनें</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Diagnosis Workspace -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        
+        <!-- Left Column: Input (Photo + Symptoms) -->
+        <div class="lg:col-span-5 space-y-4">
+          <div class="bg-white rounded-2xl border-2 border-stone-200 p-4 shadow-sm">
+            <h3 class="font-extrabold text-stone-900 text-sm mb-2 flex items-center gap-1.5" id="lbl-leaf-photo">
+              <i data-lucide="camera" class="w-4 h-4 text-farmer-700"></i>
+              पत्ते या कीट की फोटो अपलोड करें (Photo Diagnosis)
+            </h3>
+            
+            <!-- Upload Box -->
+            <div onclick="document.getElementById('leaf-upload').click()" class="border-2 border-dashed border-stone-300 hover:border-farmer-600 bg-stone-50 rounded-xl p-4 text-center cursor-pointer transition">
+              <input type="file" id="leaf-upload" accept="image/*" class="hidden" onchange="handleImageUpload(event)">
+              <div id="upload-placeholder" class="py-3">
+                <i data-lucide="upload-cloud" class="w-9 h-9 mx-auto text-farmer-600 mb-1"></i>
+                <p class="text-xs font-bold text-stone-700" id="btn-upload-text">कैमरे से फोटो खींचें या गैलरी से चुनें</p>
+                <p class="text-[11px] text-stone-400">JPG, PNG (Field AI Ready)</p>
+              </div>
+              <div id="image-preview-wrapper" class="hidden">
+                <img id="image-preview" src="" alt="Uploaded Leaf" class="w-full h-44 object-cover rounded-lg border border-stone-200 mx-auto">
+                <span class="inline-block mt-2 text-xs text-farmer-700 font-bold bg-farmer-100 px-2.5 py-0.5 rounded">
+                  ✓ फोटो विश्लेषण तैयार (Analyzed)
+                </span>
+              </div>
+            </div>
+
+            <!-- Quick Disease Selector Presets -->
+            <div class="mt-4">
+              <label class="block text-xs font-bold text-stone-600 mb-2" id="lbl-quick-symptoms">
+                या सीधा रोग लक्षण चुनें (Or Pick Known Pest/Symptom):
+              </label>
+              <div class="space-y-1.5" id="disease-quick-buttons">
+                <!-- Buttons injected via JS -->
+              </div>
+            </div>
+
+            <!-- Custom Symptom Query with Gemma AI -->
+            <div class="mt-4 pt-3 border-t border-stone-200">
+              <div class="flex items-center justify-between mb-1.5">
+                <label for="custom-symptom-input" class="text-xs font-bold text-stone-700 flex items-center gap-1.5">
+                  <i data-lucide="sparkles" class="w-3.5 h-3.5 text-teal-600"></i>
+                  <span id="lbl-custom-query">अन्य समस्या लिखें या बोलें (Type or Speak Query):</span>
+                </label>
+                <span class="text-[10px] font-bold text-teal-800 bg-teal-100 px-2 py-0.5 rounded border border-teal-300">
+                  Gemma 3 AI
+                </span>
+              </div>
+              <div class="space-y-2">
+                <div class="relative">
+                  <input type="text" id="custom-symptom-input" placeholder="जैसे: गेहूं की पत्तियां पीली पड़ रही हैं और तने पर भूरा पाउडर है..." class="w-full text-xs sm:text-sm p-2.5 pr-8 border-2 border-stone-300 rounded-xl focus:border-teal-600 focus:outline-none shadow-sm" onkeydown="if(event.key==='Enter') askGemmaAI()">
+                  <button type="button" onclick="startVoiceForCustomSymptom()" title="आवाज़ से बोलें (Speak Symptom)" class="absolute right-2 top-1/2 -translate-y-1/2 text-stone-400 hover:text-teal-700 p-1">
+                    <i data-lucide="mic" class="w-4 h-4"></i>
+                  </button>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button id="btn-ask-gemma" onclick="askGemmaAI()" class="flex-grow bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white font-bold px-3.5 py-2.5 rounded-xl text-xs sm:text-sm shadow flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer">
+                    <i data-lucide="sparkles" class="w-4 h-4 text-amber-300"></i>
+                    <span>Ask Gemma AI</span>
+                  </button>
+                  <button type="button" onclick="clearCustomSymptom()" title="साफ़ करें (Clear)" class="px-2.5 py-2.5 rounded-xl border border-stone-300 bg-stone-50 hover:bg-stone-100 text-stone-600 text-xs font-bold transition">
+                    <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                  </button>
+                </div>
+              </div>
+              <p class="text-[11px] text-stone-500 mt-1.5 flex items-center gap-1">
+                <i data-lucide="shield-check" class="w-3 h-3 text-teal-600 shrink-0"></i>
+                <span>ICAR 3-Point Diagnosis: संभावित रोग, रासायनिक खुराक व देसी काढ़ा।</span>
+              </p>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Right Column: AI Prescription & Remedy Cards -->
+        <div class="lg:col-span-7 space-y-4">
+
+          <!-- Gemma AI Response Card -->
+          <div id="gemma-response-card" class="bg-white rounded-2xl border-2 border-teal-400 p-4 sm:p-5 shadow-sm relative overflow-hidden">
+            <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-teal-500 via-emerald-500 to-amber-400"></div>
+
+            <!-- Top Header -->
+            <div class="flex items-center justify-between border-b pb-3 mb-3">
+              <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-600 to-emerald-700 text-white flex items-center justify-center shadow">
+                  <i data-lucide="bot" class="w-5 h-5 text-amber-300"></i>
+                </div>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <h3 class="font-extrabold text-stone-900 text-sm sm:text-base flex items-center gap-1.5" id="gemma-card-title">
+                      Gemma AI 3-Point Crop Diagnosis & Remedy
+                    </h3>
+                    <span class="text-[10px] font-bold bg-teal-100 text-teal-800 px-2 py-0.5 rounded-full border border-teal-300">
+                      Gemma 3
+                    </span>
+                  </div>
+                  <p class="text-[11px] text-stone-500 font-medium" id="gemma-card-sub">
+                    ICAR Knowledge Base • 3-Point Crop Disease Advisory
+                  </p>
+                </div>
+              </div>
+
+              <!-- Audio Speak Action -->
+              <div class="flex items-center gap-1.5">
+                <button id="btn-speak-gemma" onclick="speakGemmaResponse()" class="hidden bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-300 px-2.5 py-1.5 rounded-xl text-xs font-bold items-center gap-1 transition shadow-sm">
+                  <i data-lucide="volume-2" class="w-3.5 h-3.5 text-teal-700"></i>
+                  <span id="lbl-speak-gemma-btn">सलाह सुनें</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Loading Spinner State (hidden by default) -->
+            <div id="gemma-loading" class="hidden py-8 px-4 text-center">
+              <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-teal-50 text-teal-600 mb-3 animate-spin">
+                <i data-lucide="loader-2" class="w-6 h-6"></i>
+              </div>
+              <p class="text-xs sm:text-sm font-bold text-teal-900" id="gemma-loading-msg">
+                Gemma AI फसल लक्षणों का विश्लेषण कर रहा है...
+              </p>
+              <p class="text-[11px] text-stone-500 mt-1">ICAR मानकों एवं जैविक उपचार डेटाबेस से परामर्श किया जा रहा है</p>
+            </div>
+
+            <!-- Error State (hidden by default) -->
+            <div id="gemma-error" class="hidden p-3.5 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 space-y-1">
+              <div class="flex items-center gap-1.5 font-bold">
+                <i data-lucide="alert-circle" class="w-4 h-4 text-rose-600 shrink-0"></i>
+                <span id="gemma-error-title">अनुरोध में समस्या आई</span>
+              </div>
+              <p id="gemma-error-msg" class="text-[11px] text-rose-700"></p>
+            </div>
+
+            <!-- Initial Idle State -->
+            <div id="gemma-idle-state" class="py-6 text-center text-stone-500 space-y-2">
+              <div class="w-12 h-12 mx-auto rounded-2xl bg-stone-100 flex items-center justify-center text-teal-700">
+                <i data-lucide="microscope" class="w-6 h-6"></i>
+              </div>
+              <p class="text-xs font-bold text-stone-700" id="gemma-idle-text">
+                फसल के लक्षण लिखें और "Ask Gemma AI" दबाएं
+              </p>
+              <p class="text-[11px] text-stone-400 max-w-sm mx-auto">
+                Gemma AI चुनी गई भाषा में तुरंत 3-बिंदु रोग निदान, ICAR अनुशंसित रासायनिक खुराक और देसी जैविक समाधान प्रस्तुत करेगा।
+              </p>
+            </div>
+
+            <!-- Result Render Area (shown when response received) -->
+            <div id="gemma-response-rendered" class="hidden space-y-3">
+              <div class="flex items-center justify-between flex-wrap gap-2">
+                <div id="gemma-query-badge" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-stone-100 text-stone-700 text-[11px] font-semibold border border-stone-200">
+                  <i data-lucide="help-circle" class="w-3.5 h-3.5 text-teal-600"></i>
+                  <span>लक्षण:</span> <span id="gemma-queried-symptoms" class="font-bold text-stone-900"></span>
+                </div>
+                <span class="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded font-bold border border-emerald-200">
+                  ✓ ICAR Verified Structure
+                </span>
+              </div>
+
+              <!-- Formatted response container -->
+              <div id="gemma-response-body" class="space-y-2.5 text-xs text-stone-800">
+                <!-- Injected via renderGemmaResponse() -->
+              </div>
+            </div>
+
+          </div>
+
+          <div id="diagnosis-card" class="bg-white rounded-2xl border-2 border-emerald-300 p-4 sm:p-5 shadow-sm">
+            <!-- Active Disease Details -->
+            <div class="flex items-start justify-between border-b pb-3 mb-3">
+              <div>
+                <span class="text-[11px] font-black uppercase tracking-wider text-rose-600 bg-rose-100 px-2 py-0.5 rounded-full inline-block mb-1" id="diag-severity">
+                  गंभीर संक्रमण (High Urgency)
+                </span>
+                <h3 class="text-xl font-black text-stone-900" id="diag-name">
+                  पीला रतुआ (Yellow Rust in Wheat)
+                </h3>
+                <p class="text-xs text-stone-500 italic font-medium" id="diag-scientific">
+                  Puccinia striiformis f. sp. tritici
+                </p>
+              </div>
+              <button onclick="speakDiseaseAdvice()" class="bg-farmer-100 hover:bg-farmer-200 text-farmer-800 p-2 rounded-xl text-xs font-bold flex items-center gap-1">
+                <i data-lucide="volume-2" class="w-4 h-4"></i>
+                <span class="hidden sm:inline">सलाह सुनें</span>
+              </button>
+            </div>
+
+            <!-- Symptoms Description -->
+            <div class="mb-4 bg-amber-50/70 p-3 rounded-xl border border-amber-200">
+              <h4 class="text-xs font-black text-amber-900 uppercase flex items-center gap-1 mb-1">
+                <i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-amber-700"></i>
+                <span id="lbl-symptom-head">पहचान और लक्षण (Symptoms):</span>
+              </h4>
+              <p class="text-xs text-stone-700 leading-relaxed" id="diag-symptoms">
+                पत्तियों की ऊपरी सतह पर पीले रंग की धारियां और हल्दी जैसा पाउडर दिखाई देना। हाथ लगाने पर पीला रंग चिपकना।
+              </p>
+            </div>
+
+            <!-- Two Remedial Tracks: ICAR Recommended & Organic Bio-Pesticide -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+              
+              <!-- ICAR Chemical Remedy -->
+              <div class="bg-blue-50 border border-blue-200 rounded-xl p-3">
+                <div class="flex items-center gap-1.5 mb-2">
+                  <span class="w-2 h-2 rounded-full bg-blue-600"></span>
+                  <h4 class="text-xs font-black text-blue-900 uppercase" id="lbl-icar-remedy">
+                    आईसीएआर मानक उपचार (ICAR Chemical)
+                  </h4>
+                </div>
+                <div class="text-xs font-bold text-stone-800 mb-1" id="diag-chemical-name">
+                  प्रोपिकोनाजोल 25% EC (Propiconazole)
+                </div>
+                <div class="text-xs text-stone-600 space-y-1">
+                  <p><span class="font-bold text-stone-700">मात्रा:</span> <span id="diag-chemical-dose">1 मिली प्रति 1 लीटर पानी (200 मिली प्रति एकड़)</span></p>
+                  <p><span class="font-bold text-stone-700">छिड़काव:</span> <span id="diag-chemical-note">रोग दिखते ही धूप निकलने पर करें।</span></p>
+                </div>
+              </div>
+
+              <!-- Organic Native Remedy -->
+              <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3">
+                <div class="flex items-center gap-1.5 mb-2">
+                  <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+                  <h4 class="text-xs font-black text-emerald-900 uppercase" id="lbl-bio-remedy">
+                    देसी जैव समाधान (Bio/Organic)
+                  </h4>
+                </div>
+                <div class="text-xs font-bold text-stone-800 mb-1" id="diag-organic-name">
+                  खट्टी छाछ + हींग घोल अथवा 5% नीम तेल
+                </div>
+                <div class="text-xs text-stone-600 space-y-1">
+                  <p><span class="font-bold text-stone-700">तैयारी:</span> <span id="diag-organic-recipe">5 लीटर खट्टी तांबे के बर्तन वाली छाछ को 150 लीटर पानी में मिलाकर प्रति एकड़ छिड़कें।</span></p>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Spraying Weather Caution -->
+            <div class="p-3 bg-stone-100 rounded-xl border border-stone-200 flex items-center justify-between">
+              <div class="flex items-center space-x-2">
+                <i data-lucide="cloud-rain" class="w-5 h-5 text-farmer-700"></i>
+                <div class="text-xs">
+                  <span class="font-bold text-stone-800 block" id="lbl-weather-guard">मौसम सुरक्षा चेतावनी (Spray Window)</span>
+                  <span class="text-stone-600" id="diag-weather-warning">अगले 24 घंटे बारिश की कोई संभावना नहीं है। दोपहर 3 बजे के बाद छिड़काव करें।</span>
+                </div>
+              </div>
+              <span class="text-xs font-extrabold text-emerald-700 bg-emerald-100 px-2 py-1 rounded">
+                सुरक्षित (Safe)
+              </span>
+            </div>
+
+          </div>
+
+          <!-- Offline Agri Wisdom Cards -->
+          <div class="bg-white rounded-2xl border-2 border-stone-200 p-4">
+            <h4 class="text-xs font-black text-stone-700 uppercase mb-2 flex items-center gap-1">
+              <i data-lucide="bookmark" class="w-4 h-4 text-amber-600"></i>
+              <span id="lbl-offline-library">ऑफ़लाइन किसान ज्ञानकोश (Cached Field Guides)</span>
+            </h4>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+              <div class="p-2.5 rounded-lg bg-stone-50 border hover:bg-stone-100 cursor-pointer" onclick="selectPresetDisease('rust')">
+                <span class="font-bold block text-stone-800">🌾 गेहूं रतुआ</span>
+                <span class="text-[10px] text-stone-500">कवकनाशी चार्ट</span>
+              </div>
+              <div class="p-2.5 rounded-lg bg-stone-50 border hover:bg-stone-100 cursor-pointer" onclick="selectPresetDisease('bollworm')">
+                <span class="font-bold block text-stone-800">🌱 गुलाबी सुंडी</span>
+                <span class="text-[10px] text-stone-500">कपास फेरोमोन ट्रैप</span>
+              </div>
+              <div class="p-2.5 rounded-lg bg-stone-50 border hover:bg-stone-100 cursor-pointer" onclick="selectPresetDisease('blight')">
+                <span class="font-bold block text-stone-800">🥔 आलू झुलसा</span>
+                <span class="text-[10px] text-stone-500">मेंकोजेब गाइड</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- ==================== TAB 3: COMMUNITY EQUIPMENT (CUSTOM HIRING) ==================== -->
+    <section id="tab-content-equipment" class="hidden space-y-6">
+      
+      <!-- Equipment Banner -->
+      <div class="bg-gradient-to-r from-amber-700 to-soil-800 rounded-2xl p-4 sm:p-6 text-white shadow-lg">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div>
+            <span class="bg-amber-400 text-stone-950 font-black text-xs px-2.5 py-1 rounded-full uppercase tracking-wider">
+              ग्राम कस्टम हायरिंग सेंटर (Custom Hiring Center)
+            </span>
+            <h2 class="text-xl sm:text-2xl font-black mt-2" id="equip-head-title">
+              साझा कृषि यंत्र एवं ड्रोन सेवा (Shared Farm Machinery)
+            </h2>
+            <p class="text-amber-100 text-xs sm:text-sm max-w-xl" id="equip-head-sub">
+              गांव व नजदीकी ढाणी के सत्यापित किसानों से ट्रैक्टर, रोटावेटर, थ्रेशर और ड्रोन किराए पर लें या अपना यंत्र साझा करें।
+            </p>
+          </div>
+          <button onclick="openAddEquipmentModal()" class="bg-amber-400 hover:bg-amber-300 text-stone-900 font-extrabold px-3.5 py-2 rounded-xl text-xs sm:text-sm shadow flex items-center gap-1.5">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+            <span id="btn-list-machinery">+ अपना यंत्र जोड़ें</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Equipment Filters -->
+      <div class="flex flex-wrap items-center justify-between gap-3 bg-white p-3 rounded-xl border border-stone-200">
+        <div class="flex flex-wrap gap-2 text-xs" id="equip-type-filters">
+          <button onclick="filterEquipment('all')" class="equip-filter-btn px-3 py-1.5 bg-stone-800 text-white rounded-lg font-bold">सभी यंत्र (All)</button>
+          <button onclick="filterEquipment('tractor')" class="equip-filter-btn px-3 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-800 rounded-lg font-semibold">ट्रैक्टर व जुताई</button>
+          <button onclick="filterEquipment('drone')" class="equip-filter-btn px-3 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-800 rounded-lg font-semibold">ड्रोन स्प्रेयर</button>
+          <button onclick="filterEquipment('harvest')" class="equip-filter-btn px-3 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-800 rounded-lg font-semibold">हार्वेस्टर / थ्रेशर</button>
+          <button onclick="filterEquipment('irrigation')" class="equip-filter-btn px-3 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-800 rounded-lg font-semibold">सोलर पंप व सिंचाई</button>
+        </div>
+        <div class="text-xs text-stone-500 font-medium">
+          सत्यापित ग्राम पंचायत नेटवर्क (Verified Village Network)
+        </div>
+      </div>
+
+      <!-- Machinery Cards Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="equipment-grid-container">
+        <!-- Rendered by JS -->
+      </div>
+
+    </section>
+
+    <!-- ==================== TAB 4: CIVIC & RURAL EMERGENCY ==================== -->
+    <section id="tab-content-emergency" class="hidden space-y-6">
+      
+      <!-- Emergency Warning Top Alert -->
+      <div class="bg-rose-600 rounded-2xl p-4 sm:p-5 text-white shadow-lg flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div class="flex items-center space-x-3 text-center sm:text-left">
+          <div class="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center shrink-0">
+            <i data-lucide="shield-alert" class="w-7 h-7 text-amber-300"></i>
+          </div>
+          <div>
+            <h2 class="text-lg sm:text-xl font-black" id="em-alert-title">
+              तत्काल ग्रामीण आपातकालीन सेवाएं (Emergency Village Helpline)
+            </h2>
+            <p class="text-rose-100 text-xs sm:text-sm" id="em-alert-sub">
+              सांप काटने की दवा (Anti-Venom), एम्बुलेंस, पशु चिकित्सक एवं फसल बीमा सहायता
+            </p>
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <a href="tel:108" class="bg-white text-rose-700 hover:bg-rose-50 font-black px-4 py-2.5 rounded-xl text-sm flex items-center gap-1.5 shadow">
+            <i data-lucide="phone" class="w-4 h-4"></i>
+            <span>108 एम्बुलेंस</span>
+          </a>
+          <a href="tel:112" class="bg-rose-950 text-white hover:bg-rose-900 font-black px-4 py-2.5 rounded-xl text-sm flex items-center gap-1.5 shadow">
+            <i data-lucide="phone-forwarded" class="w-4 h-4"></i>
+            <span>112 पुलिस/मदद</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Emergency Categories Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        
+        <!-- Snakebite & Anti-Venom Stockists -->
+        <div class="bg-white rounded-2xl border-2 border-stone-200 p-4 shadow-sm">
+          <div class="flex items-center justify-between border-b pb-2 mb-3">
+            <div class="flex items-center space-x-2">
+              <span class="p-2 bg-rose-100 text-rose-700 rounded-xl">
+                🐍
+              </span>
+              <div>
+                <h3 class="font-extrabold text-stone-900 text-base" id="em-venom-title">
+                  सर्पदंश एंटी-वेनम केंद्र (Anti-Venom Stockists)
+                </h3>
+                <p class="text-xs text-stone-500">24x7 निःशुल्क जीवनरक्षक दवा उपलब्ध</p>
+              </div>
+            </div>
+            <span class="text-[11px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
+              जीवन रक्षा
+            </span>
+          </div>
+
+          <div class="space-y-3" id="venom-centers-list">
+            <!-- Items via JS -->
+          </div>
+        </div>
+
+        <!-- Animal Husbandry & Veterinary (पशु चिकित्सालय) -->
+        <div class="bg-white rounded-2xl border-2 border-stone-200 p-4 shadow-sm">
+          <div class="flex items-center justify-between border-b pb-2 mb-3">
+            <div class="flex items-center space-x-2">
+              <span class="p-2 bg-emerald-100 text-emerald-800 rounded-xl">
+                🐄
+              </span>
+              <div>
+                <h3 class="font-extrabold text-stone-900 text-base" id="em-vet-title">
+                  राजकीय पशु चिकित्सालय (Veterinary Doctors)
+                </h3>
+                <p class="text-xs text-stone-500">गाय, भैंस, बकरी रोग निदान एवं कृत्रिम गर्भाधान</p>
+              </div>
+            </div>
+            <span class="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+              पशुधन मित्र
+            </span>
+          </div>
+
+          <div class="space-y-3" id="vet-centers-list">
+            <!-- Items via JS -->
+          </div>
+        </div>
+
+        <!-- Krishi Vigyan Kendra (KVK) & Soil Lab -->
+        <div class="bg-white rounded-2xl border-2 border-stone-200 p-4 shadow-sm">
+          <div class="flex items-center justify-between border-b pb-2 mb-3">
+            <div class="flex items-center space-x-2">
+              <span class="p-2 bg-amber-100 text-amber-800 rounded-xl">
+                🏛️
+              </span>
+              <div>
+                <h3 class="font-extrabold text-stone-900 text-base" id="em-kvk-title">
+                  कृषि विज्ञान केंद्र व मृदा परीक्षण (KVK Center)
+                </h3>
+                <p class="text-xs text-stone-500">प्रमाणित बीज, वैज्ञानिक परामर्श व मिट्टी जांच</p>
+              </div>
+            </div>
+            <span class="text-[11px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+              वैज्ञानिक सलाह
+            </span>
+          </div>
+
+          <div class="space-y-3" id="kvk-centers-list">
+            <!-- Items via JS -->
+          </div>
+        </div>
+
+        <!-- Village Panchayat & Civic Logistics -->
+        <div class="bg-white rounded-2xl border-2 border-stone-200 p-4 shadow-sm">
+          <div class="flex items-center justify-between border-b pb-2 mb-3">
+            <div class="flex items-center space-x-2">
+              <span class="p-2 bg-blue-100 text-blue-800 rounded-xl">
+                📋
+              </span>
+              <div>
+                <h3 class="font-extrabold text-stone-900 text-base" id="em-civic-title">
+                  ग्राम पंचायत व पटवारी हेल्पलाइन (Civic Portal)
+                </h3>
+                <p class="text-xs text-stone-500">खसरा-खतौनी, सोलर सब्सिडी एवं बिजली शिकायत</p>
+              </div>
+            </div>
+            <span class="text-[11px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+              सरकारी योजनाएं
+            </span>
+          </div>
+
+          <div class="space-y-3" id="civic-centers-list">
+            <!-- Items via JS -->
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Booking Modal for Machinery -->
+  <div id="booking-modal" class="fixed inset-0 z-50 bg-black/60 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b pb-3">
+        <h3 class="text-base font-black text-stone-900" id="booking-modal-title">
+          यंत्र बुकिंग निवेदन (Booking Request)
+        </h3>
+        <button onclick="closeBookingModal()" class="text-stone-400 hover:text-stone-700 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div id="booking-machine-details" class="p-3 bg-stone-50 rounded-xl border border-stone-200 text-xs">
+        <!-- Injected -->
+      </div>
+
+      <div class="space-y-3 text-xs font-bold text-stone-700">
+        <div>
+          <label class="block mb-1">आपका नाम (Farmer Name):</label>
+          <input type="text" id="book-farmer-name" value="सुरेश कुमार" class="w-full p-2 border-2 border-stone-300 rounded-lg">
+        </div>
+        <div>
+          <label class="block mb-1">मोबाइल नंबर (Phone Number):</label>
+          <input type="tel" id="book-farmer-phone" value="98765 43210" class="w-full p-2 border-2 border-stone-300 rounded-lg">
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block mb-1">आवश्यक तारीख (Date):</label>
+            <input type="date" id="book-date" class="w-full p-2 border-2 border-stone-300 rounded-lg">
+          </div>
+          <div>
+            <label class="block mb-1">कितने घंटे / दिन (Duration):</label>
+            <input type="text" id="book-duration" value="4 घंटे" class="w-full p-2 border-2 border-stone-300 rounded-lg">
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-2 flex gap-2">
+        <button onclick="confirmBooking()" class="flex-grow bg-farmer-600 hover:bg-farmer-700 text-white font-extrabold py-2.5 rounded-xl text-xs sm:text-sm">
+          पुष्टि करें (Confirm & SMS Owner)
+        </button>
+        <button onclick="closeBookingModal()" class="px-4 py-2.5 bg-stone-200 hover:bg-stone-300 text-stone-800 rounded-xl text-xs font-bold">
+          रद्द करें
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Equipment Modal -->
+  <div id="add-equipment-modal" class="fixed inset-0 z-50 bg-black/60 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b pb-3">
+        <h3 class="text-base font-black text-stone-900">
+          नया कृषि यंत्र साझा करें (List Equipment)
+        </h3>
+        <button onclick="closeAddEquipmentModal()" class="text-stone-400 hover:text-stone-700 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="space-y-2.5 text-xs font-semibold text-stone-700">
+        <div>
+          <label class="block mb-1">यंत्र का नाम व मॉडल:</label>
+          <input type="text" id="new-eq-name" placeholder="उदा. महिंद्रा 575 ट्रैक्टर + लेजर लेवलर" class="w-full p-2 border-2 border-stone-300 rounded-lg">
+        </div>
+        <div>
+          <label class="block mb-1">श्रेणी (Category):</label>
+          <select id="new-eq-category" class="w-full p-2 border-2 border-stone-300 rounded-lg">
+            <option value="tractor">ट्रैक्टर व जुताई यंत्र</option>
+            <option value="drone">ड्रोन स्प्रेयर</option>
+            <option value="harvest">हार्वेस्टर / थ्रेशर</option>
+            <option value="irrigation">सोलर पंप व सिंचाई उपकरण</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block mb-1">किराया दर (₹):</label>
+            <input type="text" id="new-eq-rate" placeholder="₹500 / घंटा" class="w-full p-2 border-2 border-stone-300 rounded-lg">
+          </div>
+          <div>
+            <label class="block mb-1">स्थान / गांव:</label>
+            <input type="text" id="new-eq-location" placeholder="रामपुर (3 किमी)" class="w-full p-2 border-2 border-stone-300 rounded-lg">
+          </div>
+        </div>
+        <div>
+          <label class="block mb-1">मालिक का नाम व फोन:</label>
+          <input type="text" id="new-eq-owner" placeholder="बलवीर सिंह - 98290XXXXX" class="w-full p-2 border-2 border-stone-300 rounded-lg">
+        </div>
+      </div>
+
+      <div class="pt-2 flex gap-2">
+        <button onclick="saveNewEquipment()" class="flex-grow bg-amber-600 hover:bg-amber-700 text-white font-extrabold py-2.5 rounded-xl text-xs sm:text-sm">
+          यंत्र सूची में जोड़ें (Save Listing)
+        </button>
+        <button onclick="closeAddEquipmentModal()" class="px-4 py-2.5 bg-stone-200 text-stone-800 rounded-xl text-xs font-bold">
+          रद्द
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification System (Offline Friendly) -->
+  <div id="toast" class="fixed bottom-4 right-4 z-50 bg-stone-900 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-2.5 text-xs font-bold transform transition-all duration-300 translate-y-24 opacity-0">
+    <i data-lucide="check" class="w-4 h-4 text-emerald-400"></i>
+    <span id="toast-message">सूचना संदेश</span>
+  </div>
+
+  <!-- Bottom Floating Call Bar for Mobile Speed Dial -->
+  <div class="md:hidden sticky bottom-0 z-30 bg-white/95 backdrop-blur border-t border-stone-200 px-3 py-2 flex items-center justify-around text-[11px] font-bold">
+    <button onclick="switchTab('mandi')" class="flex flex-col items-center text-farmer-800">
+      <i data-lucide="trending-up" class="w-4 h-4 mb-0.5"></i>
+      <span>मंडी</span>
+    </button>
+    <button onclick="switchTab('doctor')" class="flex flex-col items-center text-emerald-800">
+      <i data-lucide="stethoscope" class="w-4 h-4 mb-0.5"></i>
+      <span>फसल डॉक्टर</span>
+    </button>
+    <button onclick="startVoiceCommand()" class="bg-amber-400 text-farmer-950 p-2.5 -mt-5 rounded-full shadow-lg border-2 border-white flex items-center justify-center">
+      <i data-lucide="mic" class="w-5 h-5"></i>
+    </button>
+    <button onclick="switchTab('equipment')" class="flex flex-col items-center text-amber-800">
+      <i data-lucide="tractor" class="w-4 h-4 mb-0.5"></i>
+      <span>किराया</span>
+    </button>
+    <a href="tel:108" class="flex flex-col items-center text-rose-700">
+      <i data-lucide="phone-call" class="w-4 h-4 mb-0.5"></i>
+      <span>आपातकाल</span>
+    </a>
+  </div>
+
+
+</body>
+</html>
